@@ -1,0 +1,50 @@
+{
+  "navItems": [
+    {
+      "name": "Dashboard",
+      "icon": "HomeIcon",
+      "path": "/",
+      "roles": [
+        "ALL"
+      ],
+      "children": []
+    },
+    {
+      "name": "Scraping Jobs",
+      "icon": "ScrapingJobsIcon",
+      "path": "/scraping-jobs",
+      "roles": [
+        "ALL"
+      ],
+      "children": []
+    },
+    {
+      "name": "Scraped Products",
+      "icon": "ScrapedProductsIcon",
+      "path": "/scraped-products",
+      "roles": [
+        "ALL"
+      ],
+      "children": []
+    },
+    {
+      "name": "Logout",
+      "icon": "LogOutIcon",
+      "path": "/login",
+      "roles": [
+        "ALL"
+      ],
+      "children":[]
+    }
+  ],
+  "profileMenu": [
+    {
+      "name": "Profile",
+      "path": "/profile"
+    },
+    {
+      "name": "Logout",
+      "path": "/login"
+    }
+  ]
+}

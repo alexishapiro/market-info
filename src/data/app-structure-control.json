@@ -1,0 +1,172 @@
+{
+  "version": "1.0",
+  "appName": "Marketplace Info",
+  "baseUrl": "/",
+  "auth": {
+    "loginPage": "/login",
+    "logoutRedirect": "/login",
+    "unauthorizedPage": "/unauthorized"
+  },
+  "layout": {
+    "component": "DashboardLayout",
+    "children": ["Header", "Sidebar"]
+  },
+  "navigation": {
+    "component": "Sidebar",
+    "items": [
+      {
+        "label": "Profile",
+        "path": "/profile",
+        "icon": "UserIcon",
+        "roles": ["ALL"]
+      },
+      {
+        "label": "Scrape",
+        "path": "/scrape",
+        "icon": "HomeIcon",
+        "roles": ["ALL"]
+      },
+      {
+        "label": "Logout",
+        "path": "/login",
+        "icon": "LogoutIcon",
+        "roles": ["ALL"]
+      }
+    ]
+  },
+  "pages": [
+    {
+      "path": "/scrape/details",
+      "component": "ScrapePage",
+      "allowedRoles": ["ALL"],
+      "sections": [
+        {
+          "ui": "div",
+          "type": "Scrape",
+          "component": "ScrapeList",
+          "loaders": ["Scrape"],
+          "enums": ["ScrapeId"]
+        }
+      ]
+    },
+    {
+      "path": "/dashboard",
+      "component": "DashboardPage",
+      "allowedRoles": ["ALL"],
+      "sections": [
+        {
+          "ui": "div",
+          "type": "Dashboard",
+          "component": "DashboardList",
+          "loaders": ["Dashboard"],
+          "enums": ["DashboardId"]
+        }
+      ]
+    }
+  ],
+  "components": {
+    "common": [
+      {
+        "name": "Header",
+        "props": ["User"]
+      },
+      {
+        "name": "Footer",
+        "props": []
+      },
+      {
+        "name": "Sidebar",
+        "props": ["User"]
+      },
+      {
+        "name": "SEO",
+        "props": ["title", "description", "canonical", "ogImage"]
+      }
+    ],
+    "forms": [
+      {
+        "name": "ScrapeForm",
+        "model": "Scrape",
+        "fields": ["url", "data"],
+        "types": ["string", "string"]
+      },
+      {
+        "name": "UserRoleForm",
+        "model": "UserRole",
+        "fields": ["name"],
+        "types": ["string"]
+      },
+      {
+        "name": "UserForm",
+        "model": "User",
+        "fields": ["email", "name", "password", "roleId"],
+        "types": ["string", "string", "string", "string"]
+      }
+    ],
+    "lists": [
+      {
+        "name": "ScrapeList",
+        "model": "Scrape",
+        "columns": ["url", "data", "createdAt", "updatedAt"]
+      },
+      {
+        "name": "UserRoleList",
+        "model": "UserRole",
+        "columns": ["name", "createdAt", "updatedAt"]
+      },
+      {
+        "name": "UserList",
+        "model": "User",
+        "columns": ["email", "name", "role", "createdAt", "updatedAt"]
+      }
+    ]
+  },
+  "dataModels": [
+    {
+      "name": "Scrape",
+      "fields": [
+        {"name": "id", "type": "string", "primaryKey": true},
+        {"name": "url", "type": "string"},
+        {"name": "data", "type": "string"},
+        {"name": "createdAt", "type": "datetime"},
+        {"name": "updatedAt", "type": "datetime"}
+      ],
+      "relations": []
+    },
+    {
+      "name": "UserRole",
+      "fields": [
+        {"name": "id", "type": "string", "primaryKey": true},
+        {"name": "name", "type": "string"},
+        {"name": "createdAt", "type": "datetime"},
+        {"name": "updatedAt", "type": "datetime"}
+      ],
+      "relations": [
+        {"name": "users", "type": "User", "relationType": "oneToMany"}
+      ]
+    },
+    {
+      "name": "User",
+      "fields": [
+        {"name": "id", "type": "string", "primaryKey": true},
+        {"name": "email", "type": "string"},
+        {"name": "name", "type": "string", "optional": true},
+        {"name": "password", "type": "string"},
+        {"name": "createdAt", "type": "datetime"},
+        {"name": "updatedAt", "type": "datetime"},
+        {"name": "roleId", "type": "string"}
+      ],
+      "relations": [
+        {"name": "role", "type": "UserRole", "relationType": "manyToOne"}
+      ]
+    }
+  ],
+  "api": {
+    "baseUrl": "/api",
+    "endpoints": [
+      {"path": "/scrapes", "methods": ["GET", "POST", "PUT", "DELETE"]},
+      {"path": "/users", "methods": ["GET", "POST", "PUT", "DELETE"]},
+      {"path": "/user-roles", "methods": ["GET", "POST", "PUT", "DELETE"]}
+    ]
+  }
+}

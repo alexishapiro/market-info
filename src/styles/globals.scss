@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --tw-translate-x:-100%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --tw-translate-x:-100%;
+    --destructive-foreground: 0 0% 98%;
+    --secondary-foreground: 20 0% 100%;
+    --popover-foreground: 60 0% 99%;
+    --primary-foreground: 240 5% 6%;
+    --accent-foreground: 240 0% 100%;
+    --muted-foreground: 60 0% 81%;
+    --card-foreground: 60 0% 95%;
+    --destructive: 0 58% 43%;
+    --background: 250 9% 15%;
+    --foreground: 20 0% 98%;
+    --secondary: 203 43% 36%;
+    --popover: 240 5% 12%;
+    --primary: 38.2 55% 52.9%;
+    --accent: 0 8% 0%;
+    --border: 49 0% 47%;
+    --muted: 240 4% 10%;
+    --input: 240 5% 36%;
+    --card: 240 4% 10%;
+    --ring: 60 100% 90%;
+    --radius: 0.6rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+  .-translate-x-full-width {
+    --tw-translate-x: -100% !important;
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))  !important;
+  }
+  #primitiveTabs > div{
+    width:100%;
+  }
+}
+
+ 
