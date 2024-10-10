@@ -1,31 +1,42 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/server/db';
-import { z } from 'zod';
+// import { hash } from 'bcrypt';
 
 export async function POST(req: Request) {
-  const { email, password, name, role } = await req.json();
-  let emailAttr = email;
-  let passwordAttr = password;
-  let nameAttr = name;
-  let roleAttr = role;
-  let userCreated = null;
-  let memberUser = null;
-  let accountUser = null;
-  try {
-    userCreated = await db.user.create({
-      data: {
-        email: emailAttr, 
-        password: passwordAttr,
-        role: roleAttr,
-        name: nameAttr,
-      }
-    });
-    if (!userCreated) {
-      return NextResponse.json({ error: 'User creation failed' }, { status: 500 });
-    }
-  } catch (error) {
-    return NextResponse.json({ error: 'User creation failed' + error }, { status: 500 });
+  if (req.method !== 'POST') {
+    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
   }
-  return NextResponse.json({ message: 'User created successfully' }, { status: 200 });
+
+  try {
+    const { email, password, name, role } = await req.json();
+
+    // Check if user already exists
+    const existingUser = await db.user.findUnique({
+      where: { email },
+    });
+  
+    
+    if (existingUser) {
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+    }
+
+    // Hash the password
+    // const hashedPassword = await hash(password, 10);
+
+    // Create the user
+    const user = await db.user.create({
+      data: {
+        email: email,
+        password: password,
+        name: name,
+        role: role,
+      },
+    });
+
+    return NextResponse.json({ message: 'User created successfully', user }, { status: 201 });
+  } catch (error) {
+    console.error('Registration error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

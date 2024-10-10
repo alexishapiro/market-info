@@ -227,4 +227,32 @@ function getInputType(field: Field): string {
       return 'text';
   }
 }
+export function absoluteUrl(path: string) {
+  return `${process.env.NEXT_PUBLIC_APP_URL}${path}`
+}
+
+export function truncate(str: string, length: number) {
+  return str.length > length ? `${str.substring(0, length)}...` : str
+}
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export async function fetcher<JSON = any>(
+  input: RequestInfo,
+  init?: RequestInit
+): Promise<JSON> {
+  const res = await fetch(input, init)
+  return res.json()
+}
+
+export function isValidUrl(string: string) {
+  try {
+    new URL(string)
+    return true
+  } catch (err) {
+    return false
+  }
+}
 
