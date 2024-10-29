@@ -1,0 +1,20 @@
+{
+    "type": "object",
+    "properties": {
+        "priceProduct": {
+            "type": "number"
+        },
+        "currencyProduct": {
+            "type": "string"
+        },
+        "brandProduct": {
+            "type": "string"
+        },
+        "ratingValue": {
+            "type": "number"
+        },
+        "productDesc": {
+            "type": "string"
+        }
+    }
+}

@@ -6,13 +6,21 @@ import * as winston from 'winston'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import puppeteerExtra from 'puppeteer-extra'
 import FirecrawlApp from '@mendable/firecrawl-js'
-import schemaApple from './schemaApple.json'
 import { z } from 'zod'
-import { Page } from 'puppeteer'
+
 const app = new FirecrawlApp({
   apiKey: 'fc-2fefef7280c241269e655b5fca8b1efe',
 })
 
+// Define schema to extract contents into
+const schema = z.object({
+  Price: z.number(),
+  priceCurrency: z.string(),
+  brand: z.string(),
+  ratingValue: z.number(),
+  productURL: z.string(),
+  productDesc: z.string(),
+})
 // Setup stealth plugin
 puppeteerExtra.use(StealthPlugin())
 
@@ -31,21 +39,15 @@ const logger = winston.createLogger({
   ],
 })
 
-// Add warn method alias for warning
-logger.warn = logger.warning
-
 // Simple string similarity function
 const stringSimilarity = (str1: string, str2: string): number => {
   const len1 = str1.length
   const len2 = str2.length
   const maxLength = Math.max(len1, len2)
-  if (maxLength === 0) return 0 // If both strings are empty, they're 100% similar
-  if (str1 === str2) return 100
-  if (str1.includes(str2)){
-    const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase())
-    return ((maxLength - distance) / maxLength) * 100
-  }
-  return 0
+  if (maxLength === 0) return 100 // If both strings are empty, they're 100% similar
+
+  const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase())
+  return ((maxLength - distance) / maxLength) * 100
 }
 
 // Levenshtein distance function
@@ -84,7 +86,7 @@ const loadCsvFile = (filePath: string): any[] => {
       columns: true,
       skip_empty_lines: true,
     })
-    logger.info(`CSV file '${filePath}' loaded successfully. with ${records.length} rows.`)
+    logger.info(`CSV file '${filePath}' loaded successfully.`)
     return records
   } catch (error) {
     logger.error(`Failed to load CSV file '${filePath}'. Error: ${error}`)
@@ -93,69 +95,20 @@ const loadCsvFile = (filePath: string): any[] => {
 }
 
 // Write to CSV file
-const writeToCsv = (filename: string, data: any[], headers?: string[]) => {
-  if (!data || data.length === 0) {
-    logger.warn(`No data to write to ${filename}`)
-    return
-  }
-
-  try {
-    const output = stringify.stringify(data, { 
-      header: true,
-      columns: headers || Object.keys(data[0])
-    })
-    fs.writeFileSync(filename, output)
-    logger.info(`Data written to ${filename}`)
-  } catch (error) {
-    logger.error(`Failed to write to CSV file ${filename}: ${error}`)
-  }
-}
-
-// Get product links using Firecrawl API
-const getProductLinksWithFirecrawl = async (productURL: string): Promise<any> => {
-  const url = productURL
-
-  try {
-    logger.info(`Attempting to scrape URL: ${url}`)
-
-    const scrapeResult = await app.scrapeUrl(url, {
-      formats: ["extract"],
-      extract: { schema: z.object({
-        priceProduct: z.string(),
-        currencyProduct: z.string(),
-        brandProduct: z.string(),
-        ratingValue: z.string(),
-        productDesc: z.string()
-      })}
-    });
-
-    if (!scrapeResult.success) {
-      throw new Error(`Failed to scrape: ${scrapeResult.error}`)
-    }
-    logger.info(`Successfully scraped ${scrapeResult.extract?.productDesc || ""} products from URL: ${url}`)
-    return scrapeResult.extract || []
-
-  } catch (error) {
-    logger.error(`Error scraping URL ${url}: ${error}`)
-    throw error
-  }
+const writeToCsv = (filename: string, data: any[], headers: string[]) => {
+  const output = stringify.stringify(data, { header: true, columns: headers })
+  fs.writeFileSync(filename, output)
+  logger.info(`Data written to ${filename}`)
 }
 
 // Get product links
 const getProductLinks = async (
-  page: Page,
-  searchFields: string,
-  isSearch: boolean
+  page: puppeteer.Page,
+  searchTerm: string
 ): Promise<any[]> => {
-  let url: string
-  if (isSearch) {
-    const baseUrl = 'https://goldapple.ru/catalogsearch/result/?q='
-    const encodedSearch = encodeURIComponent(searchFields)
-    url = baseUrl + encodedSearch
-  }
-  else {
-    url = searchFields
-  }
+  const baseUrl = 'https://goldapple.ru/catalogsearch/result/?q='
+  const encodedSearch = encodeURIComponent(searchTerm)
+  const url = baseUrl + encodedSearch
 
   try {
     await page.goto(url, { waitUntil: 'networkidle2' })
@@ -221,13 +174,13 @@ const getProductLinks = async (
         const productId = product.getAttribute('data-scroll-id') || 'N/A'
 
         const nameSelectors = [
-          "div[class='BUJsV']",
-          "div[class='lcYb3']",
+          // "div[class='e4c1q']",
+          "div[class='hleTt']",
           // 'div[class="dPoHS"]',
-          // "div[class='erAf9']",
+          "div[class='erAf9']",
         ]
 
-        const prddesc = findElementContent(product, nameSelectors, 'content') || findElementContent(product, nameSelectors)
+        const prddesc = findElementContent(product, nameSelectors)
 
         const brandSelectors = ['span[itemprop="brand"]', 'span[class="BCQ9K"]']
         const brand =
@@ -260,35 +213,31 @@ const getProductLinks = async (
     logger.info(`Found ${productsData.length} product elements`)
     return productsData.slice(0, 3) // Return only the first 3 products
   } catch (error) {
-    logger.error(`Error in getProductLinks for '${searchFields}': ${error}`)
+    logger.error(`Error in getProductLinks for '${searchTerm}': ${error}`)
     return []
   }
 }
 
 // Get best product links
 const getBestProductLinks = async (
-  page: Page,
-  searchTerm: string,
-  isSearch: boolean
+  page: puppeteer.Page,
+  searchTerm: string
 ): Promise<any[]> => {
   try {
-    const productLinks = await getProductLinks(page, searchTerm, isSearch)
+    const productLinks = await getProductLinks(page, searchTerm)
 
     if (productLinks.length === 0) {
       logger.warning(`No products found for '${searchTerm}'`)
       return []
     }
-    if (isSearch) {
-      const similarities = productLinks.map((product) => ({
-        ...product,
-        similarity: stringSimilarity(searchTerm, product.brand || ''),
-      }))
 
-      similarities.sort((a, b) => b.similarity - a.similarity)
-      return similarities.slice(0, 3) // Return top 3 most similar products
-    } else {
-      return productLinks
-    }
+    const similarities = productLinks.map((product) => ({
+      ...product,
+      similarity: stringSimilarity(searchTerm, product.prddesc || ''),
+    }))
+
+    similarities.sort((a, b) => b.similarity - a.similarity)
+    return similarities.slice(0, 3) // Return top 3 most similar products
   } catch (error) {
     logger.error(`Error in getBestProductLinks for '${searchTerm}': ${error}`)
     return []
@@ -347,33 +296,24 @@ const getBestProductLinks = async (
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     )
 
-    const csvData = loadCsvFile('product_list.csv')
+    const csvData = loadCsvFile('urlsall.csv')
     const allProductsData: any[] = []
 
     for (let i = 0; i < csvData.length; i++) {
       const row = csvData[i]
-      const productURL = row['ProductURL']
-      const searchFields = row['SearchText']
-      const isSearch = row['SearchB']
+      const productName = row['List']
       logger.info(
-        `Processing product ${i + 1} of ${csvData.length}: '${productURL}' scraping by ${isSearch ? 'Search' : 'Product'}`
+        `Processing product ${i + 1} of ${csvData.length}: '${productName}'`
       )
 
       try {
-        let productSimilarities: any[] = []
-        if (isSearch) {
-          productSimilarities = await getBestProductLinks(page, searchFields, isSearch)
-          logger.info(
-          `Processing product ${i + 1} of ${csvData.length}: '${searchFields}'`
-        )
-        } else {
-          productSimilarities = await getBestProductLinks(page, productURL,isSearch)
-        }
+        const productSimilarities = await getBestProductLinks(page, productName)
+
         if (productSimilarities.length >= 0) {
           productSimilarities.forEach((product, index) => {
             allProductsData.push({
-              'Search Criteria': searchFields,
-              'Product Description': product.prddesc,
+              'Search Criteria': productName,
+              'Item Description': product.prddesc,
               Brand: product.brand,
               Rating: product.rating,
               Similarity: product.similarity,
@@ -382,53 +322,64 @@ const getBestProductLinks = async (
               'Product URL': baseProductURL + product.productHref,
               'Product ID': product.productId,
             })
-            if (isSearch) {
-              csvData[i][`Сходство продукта ${index + 1}`] = product.similarity
-              csvData[i][`продукта description ${index + 1}`] = product.prddesc
-              csvData[i][`Бренд продукта ${index + 1}`] = product.brand
-              csvData[i][`Рейтинг продукта ${index + 1}`] = product.rating
-              csvData[i][`ID продукта ${index + 1}`] = product.productId
-              csvData[i][`Цена продукта ${index + 1}`] = product.price
-              csvData[i][`Валюта цены продукта ${index + 1}`] =
-                product.priceCurrency
-              csvData[i][`URL изображения продукта ${index + 1}`] =
-                baseProductURL + product.productHref
-            }
+
+            csvData[i][`Сходство продукта ${index + 1}`] = product.similarity
+            csvData[i][`продукта description ${index + 1}`] = product.prddesc
+            csvData[i][`Бренд продукта ${index + 1}`] = product.brand
+            csvData[i][`Рейтинг продукта ${index + 1}`] = product.rating
+            csvData[i][`ID продукта ${index + 1}`] = product.productId
+            csvData[i][`Цена продукта ${index + 1}`] = product.price
+            csvData[i][`Валюта цены продукта ${index + 1}`] =
+              product.priceCurrency
+            csvData[i][`URL изображения продукта ${index + 1}`] =
+              baseProductURL + product.productHref
+
             logger.info(
               `Top ${
                 index + 1
-              } product for search criteria '${searchFields}'
-              found with a description '${product.prddesc}'
-              with a brand '${product.brand}'
-              with similarity ${product.similarity}, 
-              price ${product.price}, 
-              currency '${product.priceCurrency}', 
-              URL ${baseProductURL + product.productHref}, 
-              ID ${product.productId}`
+              } product for descriptio '${productName}' with the description '${
+                product.prddesc
+              }' with similarity ${product.similarity}, price ${
+                product.price
+              }, currency '${product.priceCurrency}', URL ${
+                baseProductURL + product.productHref
+              }, ID ${product.productId}`
             )
           })
         } else {
-          logger.warn(`No valid links found for product '${searchFields}'.`)
+          logger.warning(`No valid links found for product '${productName}'.`)
         }
       } catch (error) {
-        logger.error(`Error processing product '${searchFields}': ${error}`)
+        logger.error(`Error processing product '${productName}': ${error}`)
       }
 
       // Save progress after each 10 products
-      if ((i + 1) % 10 === 0 && allProductsData.length > 0) {
-        writeToCsv('product_links_updated.csv', csvData)
-        writeToCsv('product_output.csv', allProductsData)
+      if ((i + 1) % 10 === 0) {
+        writeToCsv(
+          'progress_найти ссылки на товары_updated.csv',
+          csvData,
+          Object.keys(csvData[0])
+        )
+        writeToCsv(
+          'progress_productoutput.csv',
+          allProductsData,
+          Object.keys(allProductsData[0])
+        )
         logger.info(`Progress saved after processing ${i + 1} products.`)
       }
     }
 
     // Save final results
-    if (csvData.length > 0) {
-      writeToCsv('product_links_updated.csv', csvData)
-    }
-    if (allProductsData.length > 0) {
-      writeToCsv('product_output.csv', allProductsData)
-    }
+    writeToCsv(
+      'найти ссылки на товары_updated.csv',
+      csvData,
+      Object.keys(csvData[0])
+    )
+    writeToCsv(
+      'productoutput.csv',
+      allProductsData,
+      Object.keys(allProductsData[0])
+    )
     logger.info('Final CSV files saved.')
   } catch (error) {
     logger.error(`An unexpected error occurred: ${error}`)

@@ -1,0 +1,6 @@
+2024-10-26T19:08:36.598Z - error: Failed to load CSV file 'product_links.csv'. Error: ENOENT: No such file or directory
+2024-10-26T19:08:36.600Z - error: An unexpected error occurred: ENOENT: No such file or directory
+2024-10-26T19:08:37.410Z - info: Browser closed and script completed.
+2024-10-26T19:08:51.943Z - error: Failed to load CSV file 'product_links.csv'. Error: ENOENT: No such file or directory
+2024-10-26T19:08:51.949Z - error: An unexpected error occurred: ENOENT: No such file or directory
+2024-10-26T19:08:52.420Z - info: Browser closed and script completed.
